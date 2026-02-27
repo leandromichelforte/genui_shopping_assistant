@@ -1,6 +1,6 @@
 # GenUI Shopping Assistant Demo
 
-A Flutter demo app accompanying the blog post **TDB**.
+A Flutter demo app accompanying that showcases the potential of GenUI.
 
 The app showcases a product/shopping assistant powered by **Firebase AI Logic** (Gemini) and **GenUI**, where the AI dynamically composes Flutter widget trees at runtime. No pre-coded UI branches required.
 
