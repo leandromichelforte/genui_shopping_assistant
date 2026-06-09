@@ -1,11 +1,22 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
+import 'package:genui_shopping_assistant/shopping_assistant/ai/claude_ai_transport.dart';
 import 'package:genui_shopping_assistant/shopping_assistant/ai/firebase_ai_transport.dart';
 import 'package:genui_shopping_assistant/shopping_assistant/catalog/shopping_catalog.dart';
 import 'package:genui_shopping_assistant/shopping_assistant/view/widgets/chat_input_bar.dart';
 import 'package:genui_shopping_assistant/shopping_assistant/view/widgets/message_bubble.dart';
 import 'package:genui_shopping_assistant/shopping_assistant/view/widgets/typing_indicator.dart';
 import 'package:logging/logging.dart';
+
+enum AiProvider { gemini, claude }
+
+extension _AiProviderLabel on AiProvider {
+  String get label => switch (this) {
+        AiProvider.gemini => 'Gemini',
+        AiProvider.claude => 'Claude',
+      };
+}
 
 final _log = Logger('ShoppingAssistantPage');
 
@@ -41,9 +52,10 @@ class ShoppingAssistantPage extends StatefulWidget {
 }
 
 class _ShoppingAssistantPageState extends State<ShoppingAssistantPage> {
-  late final ContentGenerator _contentGenerator;
-  late final A2uiMessageProcessor _messageProcessor;
-  late final GenUiConversation _conversation;
+  AiProvider _selectedProvider = kIsWeb ? AiProvider.gemini : AiProvider.claude;
+  late ContentGenerator _contentGenerator;
+  late A2uiMessageProcessor _messageProcessor;
+  late GenUiConversation _conversation;
 
   final List<_MessageEntry> _messages = [];
   final ScrollController _scrollController = ScrollController();
@@ -51,15 +63,15 @@ class _ShoppingAssistantPageState extends State<ShoppingAssistantPage> {
   @override
   void initState() {
     super.initState();
+    _initConversation(_selectedProvider);
+  }
 
-    // 1. Build the Firebase AI content generator (Gemini streaming).
-    _contentGenerator = buildFirebaseAiContentGenerator();
-
-    // 2. Create the A2uiMessageProcessor — the runtime engine that manages
-    //    every GenUI surface (AI-composed widget tree) in this session.
+  void _initConversation(AiProvider provider) {
+    _contentGenerator = switch (provider) {
+      AiProvider.gemini => buildFirebaseAiContentGenerator(),
+      AiProvider.claude => buildClaudeContentGenerator(),
+    };
     _messageProcessor = A2uiMessageProcessor(catalogs: [shoppingCatalog]);
-
-    // 3. Create the GenUiConversation — orchestrates turns, events, and state.
     _conversation = GenUiConversation(
       contentGenerator: _contentGenerator,
       a2uiMessageProcessor: _messageProcessor,
@@ -87,6 +99,16 @@ class _ShoppingAssistantPageState extends State<ShoppingAssistantPage> {
         }
       },
     );
+  }
+
+  void _switchProvider(AiProvider provider) {
+    if (provider == _selectedProvider) return;
+    _conversation.dispose();
+    setState(() {
+      _selectedProvider = provider;
+      _messages.clear();
+      _initConversation(provider);
+    });
   }
 
   @override
@@ -138,6 +160,30 @@ class _ShoppingAssistantPageState extends State<ShoppingAssistantPage> {
           ],
         ),
         centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: DropdownButton<AiProvider>(
+              value: _selectedProvider,
+              underline: const SizedBox.shrink(),
+              items: AiProvider.values
+                  .map(
+                    (p) => DropdownMenuItem(
+                      value: p,
+                      child: Text(p.label),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (p) {
+                if (p == null) {
+                  return;
+                }
+
+                _switchProvider(p);
+              },
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
