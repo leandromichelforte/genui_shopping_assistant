@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch Shopping Assistant (macOS)",
+      "name": "Launch Shopping Assistant (Claude + macOS)",
       "request": "launch",
       "type": "dart",
       "deviceId": "macos",
@@ -14,13 +14,10 @@
       ]
     },
     {
-      "name": "Launch Shopping Assistant (Chrome)",
+      "name": "Launch Shopping Assistant (Gemini + Chrome)",
       "request": "launch",
       "type": "dart",
       "deviceId": "chrome",
-      "args": [
-        "--dart-define=ANTHROPIC_API_KEY=${env:CLAUDE_SHOPPING_ASSISTANT_KEY}"
-      ]
     }
   ]
 }
